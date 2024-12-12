@@ -1,0 +1,66 @@
+# version: '3.9'
+
+services:
+  # Nginx Container
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "8888:8000"
+      # - "4173:4173"
+    volumes:
+      - ./laravel-project:/var/www/laravel
+      - ./vue-project:/var/www/vue
+      - ./dockers/nginx:/etc/nginx/conf.d
+    networks:
+      - laravel-vue-app
+    depends_on:
+      - app
+      - mysql
+  # PHP Container
+  app:
+    build:
+      args:
+        user: lekhuong
+        uid: 1000
+      context: ./laravel-project
+      dockerfile: Dockerfile
+    # ports:
+      # - "5173:5173"
+    container_name: app
+    restart: unless-stopped
+    working_dir: /var/www/laravel
+    volumes:
+      - ./laravel-project:/var/www/laravel
+      # - ./dockers/php/php.ini:/usr/local/etc/php/php.ini #Optional custom php.ini
+    networks:
+      - laravel-vue-app
+  # MyQsl Container
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./dockers/mysql:/var/lib/mysql
+    networks:
+      - laravel-vue-app
+  # Node container
+  node:
+    build:
+      context: ./vue-project
+      dockerfile: Dockerfile
+    container_name: node
+    ports:
+      - "8989:4173"
+    working_dir: /var/www/vue
+    # restart: unless-stopped
+    networks:
+      - laravel-vue-app
+networks:
+  laravel-vue-app:
+    driver: bridge
